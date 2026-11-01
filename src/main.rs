@@ -25,20 +25,21 @@ Writes to standard output, or replaces FILE only after collection succeeds.
 Requires an authenticated GitHub CLI; in GitHub Actions, set GH_TOKEN to github.token.
 Render a collected SNAPSHOT into DIR: koi.gif swims the behavior chosen for its
 observation date, koi.png is the still koi, and preview.html shows both on light and
-dark backgrounds. BODY is white (the default), black, asagi, tea, gold, or platinum.
+dark backgrounds. BODY is white (the default), black, asagi, tea, gold, platinum, or blue.
 The files are replaced only after all of them render.
 Errors go to stderr and exit 1; invalid usage exits 2.
 Examples: git-koi collect octocat --output snapshot.json
           git-koi render snapshot.json --output-dir koi --body asagi";
 
 /// Each body's name on the command line.
-const BODY_NAMES: [(&str, KoiBody); 6] = [
+const BODY_NAMES: [(&str, KoiBody); 7] = [
     ("white", KoiBody::White),
     ("black", KoiBody::Black),
     ("asagi", KoiBody::Asagi),
     ("tea", KoiBody::Tea),
     ("gold", KoiBody::Gold),
     ("platinum", KoiBody::Platinum),
+    ("blue", KoiBody::Blue),
 ];
 
 fn main() -> ExitCode {

@@ -18,13 +18,14 @@ use git_koi::render::{
 type LanguageMix<'a> = &'a [(&'a str, Option<&'a str>, f64)];
 
 const RED_MIX: LanguageMix = &[("C++", Some("#f34b7d"), 1.0)];
-const BODIES: [KoiBody; 6] = [
+const BODIES: [KoiBody; 7] = [
     KoiBody::White,
     KoiBody::Black,
     KoiBody::Asagi,
     KoiBody::Tea,
     KoiBody::Gold,
     KoiBody::Platinum,
+    KoiBody::Blue,
 ];
 const FOUR_LANGUAGE_MIX: LanguageMix = &[
     ("C", Some("#555555"), 0.25),

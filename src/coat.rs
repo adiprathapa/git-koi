@@ -12,9 +12,9 @@
 //! koi show their pigments pale until [`crate::koi::FULL_COLOR_CONTRIBUTIONS`]: red,
 //! orange, yellow, and blue come in first, and black last.
 //!
-//! The caller chooses one of six [`KoiBody`] values. Each body redraws the pigments in
+//! The caller chooses one of seven [`KoiBody`] values. Each body redraws the pigments in
 //! its own palette, and a pigment that would match the ground swaps so it stays
-//! visible: black becomes white on black, blue becomes white on Asagi, yellow becomes
+//! visible: black becomes white on black, blue becomes white on Asagi and blue, yellow becomes
 //! platinum on gold and gold on platinum, and tea draws every pigment in earthy tones.
 //! Black and Asagi also brighten yellow, and black turns blue sky blue. Gold and
 //! platinum catch a metallic sheen on the bare body, never on the color patches. A koi
@@ -88,6 +88,12 @@ const ASAGI_RAMP: [[u8; 4]; 4] = [
     [139, 155, 180, 255],
 ];
 const ASAGI_NET_RAMP: [[u8; 4]; 1] = [[58, 68, 102, 255]];
+const BLUE_BODY_RAMP: [[u8; 4]; 4] = [
+    [2, 46, 74, 255],
+    [4, 80, 120, 255],
+    [6, 113, 164, 255],
+    [70, 160, 205, 255],
+];
 const TEA_RAMP: [[u8; 4]; 4] = [
     [62, 39, 49, 255],
     [115, 62, 57, 255],
@@ -204,6 +210,8 @@ pub enum KoiBody {
     Gold,
     /// Metallic platinum.
     Platinum,
+    /// Deep blue, #0671A4.
+    Blue,
 }
 
 impl KoiBody {
@@ -215,6 +223,7 @@ impl KoiBody {
             Self::Tea => &TEA_RAMP,
             Self::Gold => &GOLD_RAMP,
             Self::Platinum => &PLATINUM_RAMP,
+            Self::Blue => &BLUE_BODY_RAMP,
         }
     }
 
@@ -222,7 +231,7 @@ impl KoiBody {
         match self {
             Self::White | Self::Black => &WHITE_RAMP,
             Self::Asagi => &ORANGE_RAMP,
-            Self::Tea | Self::Gold | Self::Platinum => self.select_ground_ramp(),
+            Self::Tea | Self::Gold | Self::Platinum | Self::Blue => self.select_ground_ramp(),
         }
     }
 
@@ -240,7 +249,9 @@ impl KoiBody {
     fn select_streak_fin_ramp(self) -> &'static [[u8; 4]] {
         match self {
             Self::Asagi | Self::Gold => &RED_RAMP,
-            Self::White | Self::Black | Self::Tea | Self::Platinum => &STREAK_GOLD_RAMP,
+            Self::White | Self::Black | Self::Tea | Self::Platinum | Self::Blue => {
+                &STREAK_GOLD_RAMP
+            }
         }
     }
 
@@ -268,7 +279,7 @@ impl KoiBody {
     /// blue sky blue.
     fn select_pigment_ramp(self, pigment: Pigment) -> &'static [[u8; 4]] {
         match (self, pigment) {
-            (Self::Black, Pigment::Sumi) | (Self::Asagi, Pigment::Ai) => &WHITE_RAMP,
+            (Self::Black, Pigment::Sumi) | (Self::Asagi | Self::Blue, Pigment::Ai) => &WHITE_RAMP,
             (Self::Black | Self::Asagi, Pigment::Ki) => &BRIGHT_YELLOW_RAMP,
             (Self::Black, Pigment::Ai) => &SKY_RAMP,
             (Self::Tea, Pigment::Beni) => &RUST_RAMP,

@@ -11,7 +11,7 @@ inputs:
     description: Account whose koi to draw.
     default: ${{ github.repository_owner }}
   body:
-    description: Body color, one of white, black, asagi, tea, gold, or platinum.
+    description: Body color, one of white, black, asagi, tea, gold, platinum, or blue.
     default: white
   output-dir:
     description:

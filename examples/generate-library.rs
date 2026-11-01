@@ -46,13 +46,14 @@ const BODY_MIX: LanguageMix = &[
     ("Rust", "#dea584", 0.2),
     ("Python", "#3572a5", 0.2),
 ];
-const BODY_SAMPLES: [(&str, KoiBody); 6] = [
+const BODY_SAMPLES: [(&str, KoiBody); 7] = [
     ("white", KoiBody::White),
     ("black", KoiBody::Black),
     ("asagi", KoiBody::Asagi),
     ("tea", KoiBody::Tea),
     ("gold", KoiBody::Gold),
     ("platinum", KoiBody::Platinum),
+    ("blue", KoiBody::Blue),
 ];
 /// A recent streak sample: still running, or ended some days before the observation.
 #[derive(Clone, Copy)]
