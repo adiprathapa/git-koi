@@ -29,9 +29,17 @@ use crate::path::swim_path;
 
 /// Width of the native canvas every koi is drawn on, at every growth level; wide, so a
 /// profile README can show it across its full width.
+#[cfg(not(feature = "narrow"))]
 pub const FRAME_WIDTH_PIXELS: u32 = 768;
+/// Width of the native canvas with the `narrow` feature, sized for a phone screen.
+#[cfg(feature = "narrow")]
+pub const FRAME_WIDTH_PIXELS: u32 = 384;
 /// Height of the native canvas.
+#[cfg(not(feature = "narrow"))]
 pub const FRAME_HEIGHT_PIXELS: u32 = 256;
+/// Height of the native canvas with the `narrow` feature.
+#[cfg(feature = "narrow")]
+pub const FRAME_HEIGHT_PIXELS: u32 = 320;
 
 /// A renderer-owned, fixed-size frame with row-major RGBA pixels.
 #[derive(Debug, Eq, PartialEq)]

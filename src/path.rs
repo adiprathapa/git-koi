@@ -16,6 +16,7 @@ const DESIGN_EDGE_MARGIN_PIXELS: [f64; 2] = [44.0, 40.0];
 /// Waypoints in shares of the reachable half width and half height, in swimming order.
 /// The koi crosses left to right through the middle, turns up at the right edge, dives
 /// to the bottom on the way back, and turns again at the left edge.
+#[cfg(not(feature = "narrow"))]
 const WAYPOINTS: [[f64; 2]; 15] = [
     [-0.6, 0.6],
     [-0.28, 0.02],
@@ -32,6 +33,19 @@ const WAYPOINTS: [[f64; 2]; 15] = [
     [-0.66, -0.78],
     [-0.94, -0.6],
     [-0.96, 0.3],
+];
+/// The narrow course: a lopsided loop that sweeps the top and dents inward on its
+/// way back along the bottom.
+#[cfg(feature = "narrow")]
+const WAYPOINTS: [[f64; 2]; 8] = [
+    [-0.95, -0.1],
+    [-0.5, -0.9],
+    [0.3, -0.85],
+    [0.95, -0.3],
+    [0.7, 0.6],
+    [0.1, 0.35],
+    [-0.35, 0.95],
+    [-0.9, 0.65],
 ];
 const SAMPLES_PER_SEGMENT: usize = 200;
 const SMOOTHING_PASSES: usize = 80;

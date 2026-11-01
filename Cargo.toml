@@ -12,6 +12,10 @@ keywords = ["github", "profile", "koi", "pixel-art", "gif"]
 categories = ["command-line-utilities", "visualization"]
 exclude = ["/.github", "/docs"]
 
+[features]
+# A narrower, taller canvas and course that fill a phone screen.
+narrow = []
+
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["std", "serde"] }
 gif = { version = "0.14", default-features = false, features = ["std"] }
