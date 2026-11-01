@@ -99,15 +99,15 @@ const PREVIEW_PANELS: &str = r#"</h1></header>
 <section class="light">
 <h2>GitHub light</h2>
 <div class="images">
-<figure><img src="koi.gif" width="512" height="512" alt="The koi swimming"><figcaption>koi.gif</figcaption></figure>
-<figure><img src="koi.png" width="512" height="512" alt="The koi, still"><figcaption>koi.png</figcaption></figure>
+<figure><img src="koi.gif" alt="The koi swimming"><figcaption>koi.gif</figcaption></figure>
+<figure><img src="koi.png" alt="The koi, still"><figcaption>koi.png</figcaption></figure>
 </div>
 </section>
 <section class="dark">
 <h2>GitHub dark</h2>
 <div class="images">
-<figure><img src="koi.gif" width="512" height="512" alt="The koi swimming"><figcaption>koi.gif</figcaption></figure>
-<figure><img src="koi.png" width="512" height="512" alt="The koi, still"><figcaption>koi.png</figcaption></figure>
+<figure><img src="koi.gif" alt="The koi swimming"><figcaption>koi.gif</figcaption></figure>
+<figure><img src="koi.png" alt="The koi, still"><figcaption>koi.png</figcaption></figure>
 </div>
 </section>
 </body>

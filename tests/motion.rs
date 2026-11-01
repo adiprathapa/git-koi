@@ -176,7 +176,7 @@ fn every_pose_value_flows_across_the_loop_boundary() {
 #[test]
 fn strokes_waves_and_sculls_keep_whole_rhythms() {
     let poses = collect_loop(Behavior::Cruise);
-    for stroke_half in [&poses[..60], &poses[60..]] {
+    for stroke_half in poses.chunks(60) {
         let strongest_wave = stroke_half
             .iter()
             .map(|pose| pose.wave_strength)
@@ -193,11 +193,9 @@ fn strokes_waves_and_sculls_keep_whole_rhythms() {
         let wave_later = cruise_pose(frame_index + 8);
         let phase_step = (wave_later.wave_phase_radians - pose.wave_phase_radians).rem_euclid(TAU);
         assert!(phase_step < 1e-9 || TAU - phase_step < 1e-9);
-        let scull_later = cruise_pose(frame_index + 20);
-        let fin_difference =
-            |pose: &SwimPose| pose.side_fin_openings_radians[1] - pose.side_fin_openings_radians[0];
-        assert!((fin_difference(&scull_later) - fin_difference(&pose)).abs() < 1e-12);
     }
+    // The inside flare follows the course's turns, so only the loop holds whole sculls.
+    assert_eq!(frame_count(Behavior::Cruise) % 20, 0);
 }
 
 #[test]
@@ -235,12 +233,18 @@ fn the_inside_fin_flares_and_both_brake_on_the_glide() {
         .map(|pose| pose.side_fin_openings_radians[1] - pose.side_fin_openings_radians[0])
         .sum::<f64>()
         / poses.len() as f64;
-    assert!((average_flare - 0.24).abs() < 1e-9);
+    // The course turns both ways, so each fin is inside some turns.
+    assert!(average_flare.abs() < 0.24);
+    let flares = poses
+        .iter()
+        .map(|pose| pose.side_fin_openings_radians[1] - pose.side_fin_openings_radians[0]);
+    assert!(flares.clone().any(|flare| flare > 0.2));
+    assert!(flares.clone().any(|flare| flare < -0.2));
     assert!(average_shared_opening(&poses[40..60]) > average_shared_opening(&poses[10..25]) + 0.2);
 }
 
 #[test]
-fn darting_swims_two_laps_of_bursts_with_tucked_then_spread_fins() {
+fn darting_swims_one_lap_of_bursts_with_tucked_then_spread_fins() {
     let poses = collect_loop(Behavior::Dart);
     let lap_turn_radians: f64 = poses
         .iter()
@@ -250,7 +254,7 @@ fn darting_swims_two_laps_of_bursts_with_tucked_then_spread_fins() {
                 - TAU / 2.0
         })
         .sum();
-    assert!((lap_turn_radians - 2.0 * TAU).abs() < 1e-9);
+    assert!((lap_turn_radians - TAU).abs() < 1e-9);
     for (frame_index, pose) in poses.iter().enumerate() {
         let burst_later = calculate_swim_pose(Behavior::Dart, frame_index as u32 + 30);
         assert!((burst_later.wave_strength - pose.wave_strength).abs() < 1e-12);
@@ -368,7 +372,12 @@ fn the_mouth_breathes_while_lapping_and_gulps_while_resting() {
     };
     for behavior in [Behavior::Cruise, Behavior::Dart] {
         let (breath_count, widest) = measure(behavior);
-        assert_eq!(breath_count, 5, "{behavior:?}");
+        // One breath every 24 frames.
+        assert_eq!(
+            breath_count as u32,
+            frame_count(behavior) / 24,
+            "{behavior:?}"
+        );
         assert!((widest - 0.7).abs() < 1e-9, "{behavior:?}");
     }
     for behavior in [Behavior::Rest, Behavior::SurfaceFeeding] {
@@ -433,7 +442,7 @@ fn collect_loop(behavior: Behavior) -> Vec<SwimPose> {
 
 fn read_lap_angle(pose: &SwimPose) -> f64 {
     match pose.course {
-        Course::Lap { angle_radians } => angle_radians,
+        Course::Lap { course_fraction } => TAU * course_fraction,
         Course::Hover { .. } => 0.0,
     }
 }

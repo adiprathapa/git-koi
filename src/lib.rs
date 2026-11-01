@@ -28,4 +28,5 @@ pub mod koi;
 pub mod markings;
 pub mod motion;
 pub mod output;
+mod path;
 pub mod render;

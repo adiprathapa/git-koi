@@ -3,6 +3,7 @@
 use std::f64::consts::{PI, TAU};
 
 use crate::behavior::Behavior;
+use crate::path::swim_path;
 
 /// Frames per second of every behavior's loop; GIF frame delays derive from it.
 pub const FRAMES_PER_SECOND: u32 = 15;
@@ -22,13 +23,15 @@ const REST_FRAME_COUNT: u32 = 90;
 const REST_DEPTH: f64 = 0.22;
 /// Feeding ripples and pellets repeat this many times per loop.
 const FEEDING_CYCLES_PER_LOOP: f64 = 3.0;
-/// Cruising and darting breathe this many times per loop, opening this far.
-const BREATHS_PER_LOOP: f64 = 5.0;
+/// Cruising and darting breathe once every this many frames, opening this far.
+const BREATH_FRAME_COUNT: f64 = 24.0;
 const BREATH_OPENING: f64 = 0.7;
 /// Resting and feeding gulp this many times per loop, opening fully.
 const GULPS_PER_LOOP: f64 = 3.0;
 const DEEP_REST_FRAME_COUNT: u32 = 120;
 const DEEP_REST_DEPTH: f64 = 0.5;
+/// A course turn this tight gives the full inside fin flare.
+const INSIDE_FLARE_RADIUS_PIXELS: f64 = 88.0;
 
 /// The numbers behind one kind of lap swimming. Each loop holds whole numbers of
 /// laps, strokes, waves, and sculls, so it closes seamlessly.
@@ -48,8 +51,8 @@ struct LapStyle {
     glide_tail_spread_radians: f64,
     stroke_tail_spread_radians: f64,
     side_fin_strokes: SideFinStrokes,
-    /// On the clockwise lap the right fin is inside the turn: it opens this much more
-    /// and the left fin this much less.
+    /// In a turn as tight as INSIDE_FLARE_RADIUS_PIXELS, the fin inside the turn opens
+    /// this much more and the outer fin this much less; gentler turns flare less.
     inside_flare_radians: f64,
     scull_swing_radians: f64,
     scull_frame_count: f64,
@@ -71,9 +74,10 @@ enum SideFinStrokes {
     },
 }
 
-/// One slow lap in eight seconds: two strokes, fifteen waves, and six sculls.
+/// One slow lap of the course in twenty-four seconds: six strokes, forty-five waves,
+/// and eighteen sculls.
 const CRUISE_STYLE: LapStyle = LapStyle {
-    loop_frame_count: 120,
+    loop_frame_count: 360,
     lap_count: 1.0,
     stroke_frame_count: 60.0,
     stroke_share: 0.55,
@@ -95,10 +99,11 @@ const CRUISE_STYLE: LapStyle = LapStyle {
     scull_phase_radians: 1.1,
 };
 
-/// Two fast laps in eight seconds: four bursts, twenty waves, and eight sculls.
+/// One fast lap of the course in sixteen seconds: eight bursts, forty waves, and
+/// sixteen sculls.
 const DART_STYLE: LapStyle = LapStyle {
-    loop_frame_count: 120,
-    lap_count: 2.0,
+    loop_frame_count: 240,
+    lap_count: 1.0,
     stroke_frame_count: 30.0,
     stroke_share: 0.35,
     speed_lag_frames: 3.0,
@@ -122,11 +127,12 @@ const DART_STYLE: LapStyle = LapStyle {
 /// Where the koi swims in a frame.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Course {
-    /// Clockwise around the frame center. The head's angle is measured clockwise on
-    /// screen from the right; loops start with the head at the top.
+    /// Along the closed swim course that wanders the whole frame; loops start with the
+    /// head at the course's start.
     Lap {
-        /// Where the head is on the lap.
-        angle_radians: f64,
+        /// How much of the course the head has covered; whole numbers are back at the
+        /// start.
+        course_fraction: f64,
     },
     /// In place, in the still pose turned by the heading offset and moved by the drift.
     Hover {
@@ -414,20 +420,21 @@ impl LapStyle {
             STILL_POSE.wave_phase_radians + frame * TAU / self.wave_frame_count;
         let scull = self.scull_swing_radians
             * (TAU * frame / self.scull_frame_count + self.scull_phase_radians).sin();
-        let breath = (TAU * BREATHS_PER_LOOP * frame / f64::from(self.loop_frame_count))
-            .sin()
-            .max(0.0);
+        let breath = (TAU * frame / BREATH_FRAME_COUNT).sin().max(0.0);
+        let course_fraction = self.lap_count * covered_speed / total_speed;
+        let swim_path = swim_path();
+        let turn_share = (swim_path.curvature_at(course_fraction * swim_path.length_pixels())
+            * INSIDE_FLARE_RADIUS_PIXELS)
+            .clamp(-1.0, 1.0);
         Drive {
-            course: Course::Lap {
-                angle_radians: -PI / 2.0 + TAU * self.lap_count * covered_speed / total_speed,
-            },
+            course: Course::Lap { course_fraction },
             depth: 0.0,
             wave_phase_radians,
             wave_strength: self.glide_wave_strength + self.stroke_wave_gain * stroke,
             tail_spread_radians: self.glide_tail_spread_radians
                 + self.stroke_tail_spread_radians * stroke * wave_phase_radians.sin().abs(),
             stroke_opening_radians: self.calculate_stroke_opening(frame),
-            right_fin_offset_radians: self.inside_flare_radians + scull,
+            right_fin_offset_radians: self.inside_flare_radians * turn_share + scull,
             feeding_phase: None,
             mouth_opening: BREATH_OPENING * breath * breath,
         }

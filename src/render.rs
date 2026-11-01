@@ -12,7 +12,7 @@
 //! maximum form keeps its anatomy at higher totals. Quiet days alone do not change the
 //! base anatomy. The pose and framing account for the body and fins.
 //!
-//! Every growth level shares one square native canvas of [`FRAME_WIDTH_PIXELS`] by
+//! Every growth level shares one wide native canvas of [`FRAME_WIDTH_PIXELS`] by
 //! [`FRAME_HEIGHT_PIXELS`], which the encoders in [`crate::output`] scale up exactly.
 //! Anatomical proportions live here; pigments, bodies, and palettes in [`crate::coat`];
 //! streak mark strengths in [`crate::markings`]; poses in [`crate::motion`].
@@ -25,11 +25,13 @@ use crate::koi::{
     ADULT_CONTRIBUTIONS, KoiDevelopment, YOUNG_SHAPE_CONTRIBUTIONS, calculate_growth_fraction,
 };
 use crate::motion::{Course, STILL_POSE, SwimPose, calculate_swim_pose, frame_count};
+use crate::path::swim_path;
 
-/// Width of the native canvas every koi is drawn on, at every growth level.
-pub const FRAME_WIDTH_PIXELS: u32 = 256;
-/// Height of the native canvas; the canvas is square.
-pub const FRAME_HEIGHT_PIXELS: u32 = FRAME_WIDTH_PIXELS;
+/// Width of the native canvas every koi is drawn on, at every growth level; wide, so a
+/// profile README can show it across its full width.
+pub const FRAME_WIDTH_PIXELS: u32 = 768;
+/// Height of the native canvas.
+pub const FRAME_HEIGHT_PIXELS: u32 = 256;
 
 /// A renderer-owned, fixed-size frame with row-major RGBA pixels.
 #[derive(Debug, Eq, PartialEq)]
@@ -70,8 +72,8 @@ pub fn render_koi(koi_development: &KoiDevelopment, koi_body: KoiBody) -> KoiFra
 
 /// Render one frame of a behavior's seamless loop, colored like `render_koi`, in the
 /// pose `motion::calculate_swim_pose` gives; frame numbers wrap around the loop of
-/// `motion::frame_count(behavior)` frames. Laps circle the frame center, and longer
-/// koi swim a tighter lap so every size fits. A hovering loop is framed once, centered
+/// `motion::frame_count(behavior)` frames. Laps follow the swim course, which wanders
+/// the whole frame, and longer koi swim it a little smaller so every size fits. A hovering loop is framed once, centered
 /// on the koi's sweep, and its drift shrinks only as far as the largest koi need to
 /// stay inside. The view never follows the fins, so it never shakes. Under water the koi
 /// turns toward water blue and partly drops out, more with depth. Identical inputs
@@ -726,7 +728,7 @@ fn smooth_step(fraction: f64) -> f64 {
 }
 
 /// The spine follows the pose's course: the still pose's fixed heading and gentle bend,
-/// turned by any heading offset, or a clockwise circle around the frame center.
+/// turned by any heading offset, or the swim course around the frame.
 fn build_spine(koi_anatomy: &KoiAnatomy, swim_pose: &SwimPose) -> Vec<CurvePoint> {
     const HEADING_RADIANS: f64 = -0.08;
     const BEND_RADIANS: f64 = 0.35;
@@ -765,18 +767,13 @@ fn build_spine(koi_anatomy: &KoiAnatomy, swim_pose: &SwimPose) -> Vec<CurvePoint
             center_points
         }
         // Each body point sits one pixel of arc behind the one in front.
-        Course::Lap { angle_radians } => {
-            let radius_pixels = calculate_lap_radius(body_length_pixels);
+        Course::Lap { course_fraction } => {
+            let swim_path = swim_path().fit_to_margin(calculate_course_margin(body_length_pixels));
+            let distance_pixels = course_fraction * swim_path.length_pixels();
             (0..point_count)
-                .map(|point_index| {
-                    let point_angle_radians = angle_radians - point_index as f64 / radius_pixels;
-                    CurvePoint {
-                        position: [
-                            radius_pixels * point_angle_radians.cos(),
-                            radius_pixels * point_angle_radians.sin(),
-                        ],
-                        half_width_pixels: calculate_point_half_width(point_index),
-                    }
+                .map(|point_index| CurvePoint {
+                    position: swim_path.position_at(distance_pixels - point_index as f64),
+                    half_width_pixels: calculate_point_half_width(point_index),
                 })
                 .collect()
         }
@@ -966,17 +963,12 @@ fn calculate_whisker_length(koi_anatomy: &KoiAnatomy) -> u32 {
         .clamp(3.0, 5.0) as u32
 }
 
-/// The lap circle's radius: as wide as the frame allows, tighter for longer koi so the
-/// whole fish stays inside, and never so tight that the body covers more than its
-/// share of the circle.
-fn calculate_lap_radius(body_length_pixels: f64) -> f64 {
-    const FRAME_REACH_PIXELS: f64 = 116.0;
-    const OUTER_REACH_FRACTION: f64 = 0.33;
-    const MAX_LAP_RADIUS_PIXELS: f64 = 88.0;
-    const MAX_BODY_SHARE_OF_LAP: f64 = 0.6;
-    (FRAME_REACH_PIXELS - OUTER_REACH_FRACTION * body_length_pixels)
-        .min(MAX_LAP_RADIUS_PIXELS)
-        .max(body_length_pixels / (TAU * MAX_BODY_SHARE_OF_LAP))
+/// Room the swim course keeps from the frame edges: enough for the body, fins, and a
+/// tail swung wide in a turn, so longer koi swim a slightly smaller course.
+fn calculate_course_margin(body_length_pixels: f64) -> f64 {
+    const MARGIN_PER_BODY_LENGTH: f64 = 0.42;
+    const MIN_MARGIN_PIXELS: f64 = 12.0;
+    (MARGIN_PER_BODY_LENGTH * body_length_pixels).max(MIN_MARGIN_PIXELS)
 }
 
 /// The corners of the box that holds every curve, including its half widths.

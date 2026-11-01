@@ -497,7 +497,7 @@ fn png_output_doubles_each_pixel_and_repeats_exactly() {
         .unwrap();
     let mut decoded_pixels = vec![0; png_reader.output_buffer_size().unwrap()];
     let frame_info = png_reader.next_frame(&mut decoded_pixels).unwrap();
-    assert_eq!((frame_info.width, frame_info.height), (512, 512));
+    assert_eq!((frame_info.width, frame_info.height), (1536, 512));
     assert_eq!(frame_info.color_type, png::ColorType::Rgba);
     for (pixel_index, native_channels) in koi_frame
         .as_rgba_bytes()

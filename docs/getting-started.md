@@ -14,11 +14,11 @@ night:
 2. Embed the koi in its `README.md`:
 
    ```html
-   <img src="koi/koi.gif" width="256" alt="My koi" />
+   <img src="koi/koi.gif" width="100%" alt="My koi" />
    ```
 
-   The GIF is drawn at exactly twice the koi's pixel size, so `width="256"`
-   shows it at native size without blurring.
+   The GIF is a wide 1536 by 512 strip drawn at twice the koi's pixel size, and
+   the koi wanders its whole width, so `width="100%"` lets it fill the README.
 
 3. Run the workflow once from the repository's Actions tab, so the first koi
    appears without waiting for midnight.
